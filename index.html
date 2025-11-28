@@ -130,19 +130,23 @@
             const angleFromRight = Math.min(180, Math.max(0, (fngValue / 100) * 180));
             const indicatorAngleDeg = 180 - angleFromRight; 
 
-            // 儀表板的顏色區間定義 (顏色採用參考網站的精確顏色)
+            // 修正: 重新定義 segments 以確保 FNG 策略界線 (25, 45, 55, 75) 精確對齊
             const segments = [
-                { startAngle: 180, endAngle: 144, color: '#EA3943' }, // 0-20 (紅)
-                { startAngle: 144, endAngle: 108, color: '#EA8C00' }, // 20-40 (橙)
-                { startAngle: 108, endAngle: 72, color: '#F3D42F' }, // 40-60 (黃/中立)
-                { startAngle: 72, endAngle: 36, color: '#93D900' }, // 60-80 (亮綠/貪婪)
-                { startAngle: 36, endAngle: 0, color: '#16C784' }, // 80-100 (青綠/極度貪婪)
+                // FNG 0-25 (45度): 紅色 (Extreme Fear)
+                { startAngle: 180, endAngle: 135, color: '#EA3943' }, 
+                // FNG 25-45 (36度): 橘色 (Fear)
+                { startAngle: 135, endAngle: 99, color: '#EA8C00' },  
+                // FNG 45-55 (18度): 黃色 (Neutral)
+                { startAngle: 99, endAngle: 81, color: '#F3D42F' },   
+                // FNG 55-75 (36度): 亮綠色 (Greed)
+                { startAngle: 81, endAngle: 45, color: '#93D900' },   
+                // FNG 75-100 (45度): 青綠色 (Extreme Greed)
+                { startAngle: 45, endAngle: 0, color: '#16C784' },    
             ];
 
             // 根據參考網站的 SVG 參數進行調整
             const size = 144; // 參考網站的 SVG 寬度
             const radius = 59; // 參考網站的半徑
-            // 修正：調整 strokeWidth 為 10，讓線條更粗，且移除 round cap 更好銜接
             const strokeWidth = 10; 
             const indicatorRadius = 7; // 指標半徑 (外圈)
             const indicatorInnerRadius = 5; // 指標半徑 (內圈)
@@ -180,7 +184,7 @@
             const indicatorPosition = getCoords(indicatorAngleDeg); 
 
             // 計算 viewBox 高度，確保能容納圓弧和指標以及中央文字。
-            // 修正：進一步減少底部留白，從 +25 調整為 +10
+            // 修正：減少底部留白
             const viewBoxHeight = centerY + 10; 
 
             return (
@@ -229,8 +233,8 @@
                         {/* 中央數值和分類文字 (置於 SVG 圓弧中間) */}
                         <text
                             x={centerX}
-                            // Y 軸調整：數值位置 (79 - 25)
-                            y={centerY - 28} // 稍微向上調整，並配合新字體大小
+                            // Y 軸調整：數值位置 
+                            y={centerY - 28} 
                             textAnchor="middle"
                             dominantBaseline="middle"
                             className="fill-white font-black"
@@ -241,8 +245,8 @@
                         </text>
                         <text
                             x={centerX}
-                            // Y 軸調整：分類位置 (79 + 0)
-                            y={centerY + 3} // 稍微向下調整，與數值間距更自然
+                            // Y 軸調整：分類位置
+                            y={centerY + 3} 
                             textAnchor="middle"
                             dominantBaseline="middle"
                             className="fill-slate-400 font-medium"
