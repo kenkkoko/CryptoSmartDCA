@@ -956,6 +956,7 @@
                         const date = new Date(item.timestamp * 1000).toISOString().split('T')[0];
 
                         // 翻譯評級
+                        let rating = item.value_classification;
                         const ratingMap = {
                             "Extreme Fear": "極度恐懼",
                             "extreme fear": "極度恐懼",
