@@ -492,6 +492,61 @@
             return <canvas ref={chartRef} />;
         };
 
+        // --- Sentiment Scarcity Bar Component ---
+        const SentimentScarcityBar = ({ data, title = "過去 365 天買入機會分佈" }) => {
+            if (!data || data.length === 0) return null;
+
+            const total = data.length;
+            const extremeFearCount = data.filter(v => v <= 25).length;
+            const fearCount = data.filter(v => v > 25 && v <= 45).length;
+            const otherCount = total - extremeFearCount - fearCount;
+
+            const extremeFearPercent = (extremeFearCount / total) * 100;
+            const fearPercent = (fearCount / total) * 100;
+            const otherPercent = (otherCount / total) * 100;
+
+            return (
+                <div className="mt-4 mb-1">
+                    <div className="flex justify-between items-end mb-1">
+                        <h4 className="text-xs font-bold text-slate-400">{title}</h4>
+                        <div className="text-[10px] text-slate-500">
+                            <span className="text-red-400 font-bold">{extremeFearCount}天</span> 極度恐懼 •
+                            <span className="text-orange-400 font-bold ml-1">{fearCount}天</span> 恐懼
+                        </div>
+                    </div>
+                    <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden flex relative">
+                        {/* Extreme Fear Segment */}
+                        <div
+                            style={{ width: `${extremeFearPercent}%` }}
+                            className="h-full bg-red-500 hover:bg-red-400 transition-colors relative group"
+                        >
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap border border-slate-700 z-10">
+                                極度恐懼: {extremeFearCount} 天 ({extremeFearPercent.toFixed(1)}%)
+                            </div>
+                        </div>
+                        {/* Fear Segment */}
+                        <div
+                            style={{ width: `${fearPercent}%` }}
+                            className="h-full bg-orange-500 hover:bg-orange-400 transition-colors relative group"
+                        >
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap border border-slate-700 z-10">
+                                恐懼: {fearCount} 天 ({fearPercent.toFixed(1)}%)
+                            </div>
+                        </div>
+                        {/* Other Segment */}
+                        <div
+                            style={{ width: `${otherPercent}%` }}
+                            className="h-full bg-blue-500/30 hover:bg-blue-500/40 transition-colors relative group"
+                        >
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap border border-slate-700 z-10">
+                                其他: {otherCount} 天 ({otherPercent.toFixed(1)}%)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // --- Index Price Card Component (Shared) ---
         const IndexPriceCard = ({ name, symbol, data, suggestion }) => {
             if (!data) return <div className="animate-pulse bg-slate-800 h-32 rounded-xl"></div>;
@@ -671,16 +726,18 @@
                     border: "border-gray-600",
                     text: "text-gray-400"
                 };
-                if (rsi <= 75) return {
+                if (val <= 75) return {
+                    title: "貪婪 (Greed)",
                     action: "停止買入",
-                    desc: "RSI 顯示市場過熱，不宜追高。",
+                    desc: "市場情緒樂觀，風險逐漸升高，不建議追高。",
                     bg: "bg-green-900/30",
                     border: "border-green-500",
                     text: "text-green-400"
                 };
                 return {
+                    title: "極度貪婪 (Extreme Greed)",
                     action: "考慮止盈",
-                    desc: "RSI 顯示市場極度超買，隨時可能回調。",
+                    desc: "市場極度樂觀，隨時可能回調，建議分批獲利了結。",
                     bg: "bg-blue-900/30",
                     border: "border-blue-500",
                     text: "text-blue-400"
@@ -812,9 +869,7 @@
                 };
 
                 return (
-                    <div className="h-64 w-full mt-4">
-                        <ChartComponent data={chartData} options={options} />
-                    </div>
+                    <ChartComponent data={chartData} options={options} />
                 );
             };
 
@@ -844,7 +899,7 @@
 
                     {/* 標題區 */}
                     <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col items-center text-center">
-                        <h2 className="text-xl font-bold text-slate-200 mb-2">美股恐懼與貪婪指數 (CNN)</h2>
+                        <h2 className="text-xl font-bold text-slate-200 mb-2">美股恐懼與貪婪指數</h2>
 
                         {loading ? (
                             <RefreshCw className="animate-spin text-slate-500" size={32} />
@@ -856,11 +911,22 @@
                             </div>
                         ) : (
                             <div className="w-full flex flex-col items-center">
-                                <FearGreedGauge
-                                    fngValue={fngData.value}
-                                    classification={fngData.classification}
-                                />
-                                <FearGreedChart history={fngHistory} />
+                                {fngData && (
+                                    <FearGreedGauge
+                                        fngValue={fngData.value}
+                                        classification={fngData.classification}
+                                    />
+                                )}
+
+                                {/* Sentiment Scarcity Bar */}
+                                {fngHistory && fngHistory.length > 0 && (
+                                    <div className="w-full max-w-2xl mt-4 px-4">
+                                        <SentimentScarcityBar
+                                            data={fngHistory.map(d => d.y)}
+                                            title="過去 365 天美股買入機會分佈"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -870,7 +936,7 @@
                         <div className={`p-6 rounded-2xl border ${suggestion.border} ${suggestion.bg} relative overflow-hidden transition-all duration-500`}>
                             <div className="relative z-10 flex flex-col md:flex-row justify-between items-center w-full max-w-lg mx-auto mt-0">
                                 <div className="flex flex-col items-start text-left mb-4 md:mb-0">
-                                    <div className="text-sm uppercase tracking-wider opacity-70 mb-1">美股 DCA 策略</div>
+                                    <div className="text-sm uppercase tracking-wider opacity-70 mb-1">DCA 策略建議</div>
                                     <span className={`text-2xl font-bold ${suggestion.text}`}>
                                         {suggestion.title}
                                     </span>
@@ -884,6 +950,21 @@
                                         {suggestion.action}
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 歷史走勢圖 */}
+                    {!loading && !error && fngHistory && fngHistory.length > 0 && (
+                        <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-xl">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-lg font-semibold flex items-center gap-2">
+                                    <TrendingUp size={18} className="text-slate-400" />
+                                    美股恐懼指數歷史走勢
+                                </h2>
+                            </div>
+                            <div className="h-[350px] w-full relative">
+                                <FearGreedChart history={fngHistory} />
                             </div>
                         </div>
                     )}
@@ -905,7 +986,7 @@
 
                     {/* 資料來源 (移至底部) */}
                     <div className="text-center text-slate-600 text-xs mt-8 pb-4">
-                        資料來源: CNN Business (Real-time), Yahoo Finance
+                        資料來源: CNN Business, Yahoo Finance, CNBC
                     </div>
                 </div>
             );
@@ -1205,9 +1286,15 @@
                                     classification={rsiData.classification}
                                 />
                             )}
-                            <div className="h-64 w-full mt-4">
-                                <ChartComponent data={chartData} options={chartOptions} />
-                            </div>
+                            {/* Sentiment Scarcity Bar */}
+                            {rsiData && rsiData.history && (
+                                <div className="w-full max-w-2xl mt-4 px-4">
+                                    <SentimentScarcityBar
+                                        data={rsiData.history.map(d => d.rsi)}
+                                        title="過去 1 年臺股買入機會分佈 (RSI)"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -1230,6 +1317,21 @@
                                         {suggestion.action}
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 歷史走勢圖 */}
+                    {rsiData && (
+                        <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-xl">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-lg font-semibold flex items-center gap-2">
+                                    <TrendingUp size={18} className="text-slate-400" />
+                                    0050 歷史走勢與買入訊號
+                                </h2>
+                            </div>
+                            <div className="h-[350px] w-full relative">
+                                <ChartComponent data={chartData} options={chartOptions} />
                             </div>
                         </div>
                     )}
@@ -1659,6 +1761,14 @@
                                     fngValue={currentFNG?.value}
                                     classification={suggestion.title.split(' ')[0]}
                                 />
+                                {historicalData.length > 0 && (
+                                    <div className="w-full max-w-2xl mt-4 px-4">
+                                        <SentimentScarcityBar
+                                            data={historicalData.map(d => d.fng)}
+                                            title="過去 365 天加密貨幣市場買入機會分佈"
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             {/* 策略建議 */}
