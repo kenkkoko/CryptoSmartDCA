@@ -430,6 +430,41 @@
         };
 
 
+        // --- Crosshair Plugin ---
+        const crosshairPlugin = {
+            id: 'crosshair',
+            afterDatasetsDraw: (chart) => {
+                // Check if tooltip is active
+                if (chart.tooltip?._active?.length) {
+                    const activePoint = chart.tooltip._active[0];
+                    const ctx = chart.ctx;
+                    const x = activePoint.element.x;
+                    const y = activePoint.element.y;
+                    const topY = chart.scales.y.top;
+                    const bottomY = chart.scales.y.bottom;
+                    const leftX = chart.scales.x.left;
+                    const rightX = chart.scales.x.right;
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.setLineDash([5, 5]);
+                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+
+                    // Vertical Line
+                    ctx.moveTo(x, topY);
+                    ctx.lineTo(x, bottomY);
+
+                    // Horizontal Line
+                    ctx.moveTo(leftX, y);
+                    ctx.lineTo(rightX, y);
+
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        };
+
         // --- 自定義 Chart 元件 ---
         const ChartComponent = ({ data, options, type = 'line' }) => {
             const chartRef = useRef(null);
@@ -444,7 +479,8 @@
                 chartInstance.current = new Chart(ctx, {
                     type: type,
                     data: data,
-                    options: options
+                    options: options,
+                    plugins: [crosshairPlugin] // Register the plugin
                 });
                 return () => {
                     if (chartInstance.current) {
