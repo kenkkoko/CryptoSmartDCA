@@ -176,10 +176,26 @@
                 <IconBase {...props}>
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </IconBase>
+            ),
+            BellRing: (props) => (
+                <IconBase {...props}>
+                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                    <path d="M4 2C2.8 3.7 2 5.7 2 8" />
+                    <path d="M22 8c0-2.3-.8-4.3-2-6" />
+                </IconBase>
+            ),
+            BellOff: (props) => (
+                <IconBase {...props}>
+                    <path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5" />
+                    <path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7" />
+                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                    <path d="M2 2l20 20" />
+                </IconBase>
             )
         };
 
-        const { Bell, TrendingUp, AlertTriangle, Info, RefreshCw, Smartphone, ArrowUp, ArrowDown, Newspaper, Sparkles, ExternalLink, Bot, Globe, Activity } = Icons;
+        const { Bell, TrendingUp, AlertTriangle, Info, RefreshCw, Smartphone, ArrowUp, ArrowDown, Newspaper, Sparkles, ExternalLink, Bot, Globe, Activity, BellRing, BellOff } = Icons;
 
         // --- 恐懼貪婪指數儀表板元件 ---
         const FearGreedGauge = ({ fngValue, classification }) => {
@@ -440,6 +456,49 @@
             return <canvas ref={chartRef} />;
         };
 
+        // --- Index Price Card Component (Shared) ---
+        const IndexPriceCard = ({ name, symbol, data, suggestion }) => {
+            if (!data) return <div className="animate-pulse bg-slate-800 h-32 rounded-xl"></div>;
+
+            const isPositive = data.change >= 0;
+
+            // Determine DCA Signal Badge
+            let badge = null;
+            if (suggestion && suggestion.action.includes("買入")) {
+                badge = <span className="ml-2 px-2 py-0.5 text-xs font-bold bg-green-500/20 text-green-400 rounded">Buy</span>;
+            } else if (suggestion && suggestion.action.includes("止盈")) {
+                badge = <span className="ml-2 px-2 py-0.5 text-xs font-bold bg-red-500/20 text-red-400 rounded">Sell</span>;
+            }
+
+            return (
+                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                    <div className="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 className="text-slate-400 text-sm font-medium flex items-center">
+                                {name}
+                                {badge}
+                            </h3>
+                            <div className="text-2xl font-bold text-slate-100 mt-1">
+                                {data.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                        </div>
+                        <div className={`text-right ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                            <div className="text-sm font-bold flex items-center justify-end">
+                                {isPositive ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                                {Math.abs(data.change).toFixed(2)}
+                            </div>
+                            <div className="text-xs font-medium">
+                                {isPositive ? '+' : ''}{data.changePercent.toFixed(2)}%
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-xs text-slate-500">
+                        {symbol} • Real-time
+                    </div>
+                </div>
+            );
+        };
+
         // --- 美股儀表板元件 ---
         const StockDashboard = ({ notificationsEnabled, toggleNotifications }) => {
             const [fngData, setFngData] = useState(null);
@@ -576,18 +635,16 @@
                     border: "border-gray-600",
                     text: "text-gray-400"
                 };
-                if (val <= 75) return {
-                    title: "貪婪 (Greed)",
+                if (rsi <= 75) return {
                     action: "停止買入",
-                    desc: "市場情緒樂觀，股價可能偏高，不建議此時追高。",
+                    desc: "RSI 顯示市場過熱，不宜追高。",
                     bg: "bg-green-900/30",
                     border: "border-green-500",
                     text: "text-green-400"
                 };
                 return {
-                    title: "極度貪婪 (Extreme Greed)",
                     action: "考慮止盈",
-                    desc: "市場極度樂觀，泡沫風險增加，建議考慮獲利了結。",
+                    desc: "RSI 顯示市場極度超買，隨時可能回調。",
                     bg: "bg-blue-900/30",
                     border: "border-blue-500",
                     text: "text-blue-400"
@@ -595,49 +652,6 @@
             };
 
             const suggestion = fngData ? getSuggestion(fngData.value) : null;
-
-            // Index Price Card Component
-            const IndexPriceCard = ({ name, symbol, data, suggestion }) => {
-                if (!data) return <div className="animate-pulse bg-slate-800 h-32 rounded-xl"></div>;
-
-                const isPositive = data.change >= 0;
-
-                // Determine DCA Signal Badge
-                let badge = null;
-                if (suggestion && suggestion.action.includes("買入")) {
-                    badge = <span className="ml-2 px-2 py-0.5 text-xs font-bold bg-green-500/20 text-green-400 rounded">Buy</span>;
-                } else if (suggestion && suggestion.action.includes("止盈")) {
-                    badge = <span className="ml-2 px-2 py-0.5 text-xs font-bold bg-red-500/20 text-red-400 rounded">Sell</span>;
-                }
-
-                return (
-                    <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                        <div className="flex justify-between items-start mb-2">
-                            <div>
-                                <h3 className="text-slate-400 text-sm font-medium flex items-center">
-                                    {name}
-                                    {badge}
-                                </h3>
-                                <div className="text-2xl font-bold text-slate-100 mt-1">
-                                    {data.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </div>
-                            </div>
-                            <div className={`text-right ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                                <div className="text-sm font-bold flex items-center justify-end">
-                                    {isPositive ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
-                                    {Math.abs(data.change).toFixed(2)}
-                                </div>
-                                <div className="text-xs font-medium">
-                                    {isPositive ? '+' : ''}{data.changePercent.toFixed(2)}%
-                                </div>
-                            </div>
-                        </div>
-                        <div className="text-xs text-slate-500">
-                            {symbol} • Real-time
-                        </div>
-                    </div>
-                );
-            };
 
             // Fear & Greed Historical Chart
             const FearGreedChart = ({ history }) => {
@@ -856,6 +870,351 @@
                     {/* 資料來源 (移至底部) */}
                     <div className="text-center text-slate-600 text-xs mt-8 pb-4">
                         資料來源: CNN Business (Real-time), Yahoo Finance
+                    </div>
+                </div>
+            );
+        };
+
+        // --- RSI 計算與分類工具 ---
+        const calculateRSI = (prices, period = 14) => {
+            if (prices.length < period + 1) return [];
+            let gains = 0;
+            let losses = 0;
+            for (let i = 1; i <= period; i++) {
+                const change = prices[i] - prices[i - 1];
+                if (change > 0) gains += change;
+                else losses -= change;
+            }
+            let avgGain = gains / period;
+            let avgLoss = losses / period;
+            const rsiArray = [];
+            // Initial RSI
+            let rs = avgGain / avgLoss;
+            let rsi = 100 - (100 / (1 + rs));
+            rsiArray.push({ index: period, rsi, price: prices[period] });
+
+            // Smoothed RSI
+            for (let i = period + 1; i < prices.length; i++) {
+                const change = prices[i] - prices[i - 1];
+                let gain = change > 0 ? change : 0;
+                let loss = change < 0 ? -change : 0;
+                avgGain = ((avgGain * (period - 1)) + gain) / period;
+                avgLoss = ((avgLoss * (period - 1)) + loss) / period;
+                rs = avgGain / avgLoss;
+                rsi = 100 - (100 / (1 + rs));
+                rsiArray.push({ index: i, rsi, price: prices[i] });
+            }
+            return rsiArray;
+        };
+
+        const getRsiClassification = (rsi) => {
+            if (rsi <= 25) return "極度恐懼 (Strong Buy)";
+            if (rsi <= 40) return "恐懼 (DCA Buy)";
+            if (rsi <= 60) return "中立 (Neutral)";
+            if (rsi <= 75) return "貪婪 (Stop Buying)";
+            return "極度貪婪 (Take Profit)";
+        };
+
+        // --- 臺股儀表板元件 ---
+        const TaiwanDashboard = () => {
+            const [rsiData, setRsiData] = useState(null);
+            const [indices, setIndices] = useState({ twii: null, tw50: null, tw56: null });
+            const [news, setNews] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+
+            const getSuggestion = (rsi) => {
+                if (rsi <= 25) return {
+                    title: "極度恐懼 (Extreme Fear)",
+                    action: "強力買入",
+                    desc: "RSI 顯示市場極度超賣，為歷史低點，建議強力買入。",
+                    bg: "bg-red-900/30",
+                    border: "border-red-500",
+                    text: "text-red-400"
+                };
+                if (rsi <= 40) return {
+                    title: "恐懼 (Fear)",
+                    action: "分批買入",
+                    desc: "RSI 處於低檔，市場情緒保守，適合執行 DCA 策略。",
+                    bg: "bg-orange-900/30",
+                    border: "border-orange-50",
+                    text: "text-orange-400"
+                };
+                if (rsi <= 60) return {
+                    title: "中立 (Neutral)",
+                    action: "持有/觀望",
+                    desc: "RSI 處於中性區間，建議觀望或持有。",
+                    bg: "bg-gray-800",
+                    border: "border-gray-600",
+                    text: "text-gray-400"
+                };
+                if (rsi <= 75) return {
+                    title: "貪婪 (Greed)",
+                    action: "停止買入",
+                    desc: "RSI 顯示市場過熱，不宜追高。",
+                    bg: "bg-green-900/30",
+                    border: "border-green-500",
+                    text: "text-green-400"
+                };
+                return {
+                    title: "極度貪婪 (Extreme Greed)",
+                    action: "考慮止盈",
+                    desc: "RSI 顯示市場極度超買，隨時可能回調。",
+                    bg: "bg-blue-900/30",
+                    border: "border-blue-500",
+                    text: "text-blue-400"
+                };
+            };
+
+            const fetchData = async () => {
+                setLoading(true);
+                try {
+                    // 1. 獲取即時價格 (Yahoo Finance)
+                    const fetchYahooPrice = async (symbol) => {
+                        const yfUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
+                        const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(yfUrl));
+                        const data = await res.json();
+                        const meta = data.chart.result[0].meta;
+                        const price = meta.regularMarketPrice;
+                        const prevClose = meta.chartPreviousClose || meta.previousClose || price;
+                        return {
+                            price: price,
+                            change: price - prevClose,
+                            changePercent: ((price - prevClose) / prevClose) * 100
+                        };
+                    };
+
+                    const [twiiData, tw50Data, tw56Data] = await Promise.all([
+                        fetchYahooPrice('^TWII'),
+                        fetchYahooPrice('0050.TW'),
+                        fetchYahooPrice('0056.TW')
+                    ]);
+                    setIndices({ twii: twiiData, tw50: tw50Data, tw56: tw56Data });
+
+                    // 2. 獲取歷史數據計算 RSI (使用 0050.TW 代表市場情緒)
+                    const historyUrl = `https://query1.finance.yahoo.com/v8/finance/chart/0050.TW?interval=1d&range=1y`;
+                    const historyRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(historyUrl));
+                    const historyJson = await historyRes.json();
+                    const timestamps = historyJson.chart.result[0].timestamp;
+                    const closes = historyJson.chart.result[0].indicators.quote[0].close;
+
+                    // 過濾掉 null 值 (Yahoo Finance 有時會有 null)
+                    const cleanData = timestamps.map((t, i) => ({ t, c: closes[i] })).filter(d => d.c !== null);
+                    const cleanCloses = cleanData.map(d => d.c);
+                    const cleanTimestamps = cleanData.map(d => d.t);
+
+                    // 確保有足夠的數據來計算 RSI (至少 14+1 天)
+                    if (cleanCloses.length < 15) throw new Error("歷史數據不足以計算 RSI (需至少 15 筆)");
+
+                    const rsiValues = calculateRSI(cleanCloses);
+                    const currentRSI = rsiValues[rsiValues.length - 1];
+
+                    setRsiData({
+                        value: Math.round(currentRSI.rsi),
+                        classification: getRsiClassification(currentRSI.rsi),
+                        history: rsiValues.map((d, i) => ({
+                            x: cleanTimestamps[d.index] * 1000, // ms
+                            y: d.price,
+                            rsi: d.rsi
+                        }))
+                    });
+
+                    // 3. 獲取臺股新聞 (Google News RSS)
+                    const rssUrl = 'https://news.google.com/rss/search?q=%E5%8F%B0%E8%82%A1%E8%B2%A1%E7%B6%93&hl=zh-TW&gl=TW&ceid=TW:zh-Hant';
+                    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(rssUrl);
+
+                    const newsResponse = await fetch(proxyUrl);
+                    const textData = await newsResponse.text();
+
+                    // Parse XML
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(textData, "text/xml");
+                    const items = xmlDoc.querySelectorAll("item");
+
+                    const newsItems = Array.from(items).slice(0, 6).map(item => {
+                        const title = item.querySelector("title")?.textContent || "";
+                        const link = item.querySelector("link")?.textContent || "";
+                        const pubDate = item.querySelector("pubDate")?.textContent || "";
+
+                        // 嘗試從 enclosure 或 description 中提取圖片
+                        let thumbnail = "";
+                        const enclosure = item.querySelector("enclosure");
+                        if (enclosure && enclosure.getAttribute("type")?.startsWith("image")) {
+                            thumbnail = enclosure.getAttribute("url");
+                        } else {
+                            const imgMatch = item.querySelector("description")?.textContent.match(/src="([^"]+)"/);
+                            if (imgMatch) thumbnail = imgMatch[1];
+                        }
+
+                        return {
+                            title,
+                            link,
+                            pubDate,
+                            thumbnail,
+                        };
+                    });
+
+                    setNews(newsItems);
+
+                } catch (e) {
+                    console.error("Taiwan data error:", e);
+                    setError(`無法獲取臺股數據: ${e.message}`);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                fetchData();
+            }, []);
+
+            if (loading) return <div className="flex justify-center items-center h-64"><RefreshCw className="animate-spin text-slate-500" size={32} /></div>;
+            if (error) return (
+                <div className="bg-red-900/20 border border-red-500/50 text-red-200 p-6 rounded-xl flex items-center gap-4">
+                    <AlertTriangle size={24} className="shrink-0" />
+                    <div>
+                        <h3 className="font-bold text-lg">臺股數據載入失敗</h3>
+                        <p className="text-sm opacity-90 my-2">{error}</p>
+                        <button onClick={fetchData} className="px-4 py-2 bg-red-800 hover:bg-red-700 rounded text-sm transition-colors mt-2">
+                            重試連線
+                        </button>
+                    </div>
+                </div>
+            );
+
+            const suggestion = rsiData ? getSuggestion(rsiData.value) : null;
+
+            // Chart Config
+            const chartData = {
+                labels: rsiData.history.map(d => new Date(d.x).toLocaleDateString()),
+                datasets: [{
+                    label: '0050 股價',
+                    data: rsiData.history.map(d => d.y),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: rsiData.history.map(d => d.rsi <= 40 ? 3 : 0), // 點半徑
+                    pointBackgroundColor: rsiData.history.map(d => d.rsi <= 25 ? '#ef4444' : (d.rsi <= 40 ? '#f97316' : 'rgba(0,0,0,0)')), // 點填充色
+
+                    // ✨ 核心修正：將點的邊框色設置為與填充色相同，或透明
+                    pointBorderColor: rsiData.history.map(d => d.rsi <= 25 ? '#ef4444' : (d.rsi <= 40 ? '#f97316' : 'rgba(0,0,0,0)')),
+
+                    pointHoverRadius: 4,
+                    fill: true,
+                    tension: 0.4
+                }]
+            };
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        callbacks: {
+                            label: (context) => {
+                                const idx = context.dataIndex + (14 - 1); // 由於 RSI 從第 14 筆開始，需要調整索引
+                                const rsi = rsiData.history[idx - 14]?.rsi?.toFixed(1) || 'N/A';
+                                const actionText = rsi !== 'N/A' && rsi <= 40 ? '🔴 DCA 買入訊號' : '⚪ 觀望';
+
+                                return [
+                                    `股價: ${context.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+                                    `模擬RSI: ${rsi}`,
+                                    actionText
+                                ];
+                            }
+                        }
+                    },
+                    title: { display: true, text: '0050 歷史走勢 (紅/橘點為 RSI 買入訊號)', color: '#94a3b8' }
+                },
+                scales: {
+                    x: { ticks: { maxTicksLimit: 6, color: '#94a3b8' }, grid: { display: false } },
+                    y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+                }
+            };
+
+            return (
+                <div className="space-y-6">
+                    {/* 大盤指數卡片 */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <IndexPriceCard
+                            name="加權指數 (^TWII)"
+                            symbol="^TWII"
+                            data={indices.twii}
+                            suggestion={suggestion}
+                        />
+                        <IndexPriceCard
+                            name="元大台灣50 (0050)"
+                            symbol="0050.TW"
+                            data={indices.tw50}
+                            suggestion={suggestion}
+                        />
+                        <IndexPriceCard
+                            name="元大高股息 (0056)"
+                            symbol="0056.TW"
+                            data={indices.tw56}
+                            suggestion={suggestion}
+                        />
+                    </div>
+
+                    {/* 標題區 */}
+                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col items-center text-center">
+                        <h2 className="text-xl font-bold text-slate-200 mb-2">臺股市場情緒RSI</h2>
+                        <div className="w-full flex flex-col items-center">
+                            {rsiData && (
+                                <FearGreedGauge
+                                    fngValue={rsiData.value}
+                                    classification={rsiData.classification}
+                                />
+                            )}
+                            <div className="h-64 w-full mt-4">
+                                <ChartComponent data={chartData} options={chartOptions} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 策略建議區 */}
+                    {suggestion && (
+                        <div className={`p-6 rounded-2xl border ${suggestion.border} ${suggestion.bg} relative overflow-hidden transition-all duration-500`}>
+                            <div className="relative z-10 flex flex-col md:flex-row justify-between items-center w-full max-w-lg mx-auto mt-0">
+                                <div className="flex flex-col items-start text-left mb-4 md:mb-0">
+                                    <div className="text-sm uppercase tracking-wider opacity-70 mb-1">臺股 DCA 策略</div>
+                                    <span className={`text-2xl font-bold ${suggestion.text}`}>
+                                        {suggestion.title}
+                                    </span>
+                                    <p className="mt-2 text-slate-300 max-w-lg text-sm">
+                                        {suggestion.desc}
+                                    </p>
+                                </div>
+                                <div className="flex flex-col items-center md:items-end gap-2 min-w-[140px] text-center md:text-right">
+                                    <div className="text-sm text-slate-400">當前操作</div>
+                                    <div className={`text-xl font-bold ${suggestion.text} border-2 border-current px-4 py-1 rounded-lg whitespace-nowrap`}>
+                                        {suggestion.action}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 新聞區 */}
+                    <div className="mt-8">
+                        <div className="flex items-center gap-2 mb-6">
+                            <Newspaper className="text-blue-500" />
+                            <h2 className="text-xl font-bold text-slate-200">臺股財經頭條 (Google News)</h2>
+                        </div>
+
+                        {!loading && !error && news.length > 0 && (
+                            <NewsSummary news={news} />
+                        )}
+
+                        <NewsSection news={news} loading={loading} error={error} />
+                    </div>
+
+                    <div className="text-center text-slate-600 text-xs mt-8 pb-4">
+                        資料來源: Yahoo Finance, Google News, Smart DCA Bot (RSI 模擬)
                     </div>
                 </div>
             );
@@ -1118,7 +1477,8 @@
                                 ];
                             }
                         }
-                    }
+                    },
+                    title: { display: true, text: `${selectedCoin === 'bitcoin' ? 'BTC' : 'ETH'} 歷史走勢 (紅點為恐懼買入訊號)`, color: '#94a3b8' }
                 },
                 scales: {
                     x: { grid: { color: 'rgba(75, 85, 99, 0.2)' }, ticks: { color: '#9ca3af', maxTicksLimit: 8 } },
@@ -1445,77 +1805,89 @@
             };
 
             return (
-                <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-10">
-                    <header className="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-10 shadow-lg">
-                        <div className="max-w-4xl mx-auto flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <TrendingUp className="text-blue-500" />
-                                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                                    Smart DCA Bot
-                                </h1>
-                            </div>
-
-                            {/* iOS Style Notification Toggle */}
+                <div className="min-h-screen text-slate-300 font-sans selection:bg-blue-500/30">
+                    <div className="max-w-4xl mx-auto p-4 pb-24">
+                        {/* Header */}
+                        {/* Header */}
+                        <header className="flex justify-between items-center mb-6">
                             <div className="flex items-center gap-3">
-                                <span className={`text-sm font-medium transition-colors ${notificationsEnabled ? 'text-white' : 'text-slate-500'}`}>
-                                    {notificationsEnabled ? '通知已開啟' : '每日通知'}
-                                </span>
-                                <button
-                                    onClick={toggleNotifications}
-                                    className={`w-12 h-7 rounded-full p-1 transition-all duration-300 ease-in-out focus:outline-none relative ${notificationsEnabled ? 'bg-green-500' : 'bg-slate-600'
-                                        }`}
-                                    title={notificationsEnabled ? "關閉通知" : "開啟通知"}
-                                >
-                                    <div
-                                        className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ease-in-out ${notificationsEnabled ? 'translate-x-5' : 'translate-x-0'
-                                            }`}
-                                    />
-                                </button>
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-blue-500 blur-lg opacity-20 rounded-full"></div>
+                                    <img src="./app-icon.png" alt="Smart DCA Logo" className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20 relative z-10" />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 tracking-tight">
+                                        Smart DCA
+                                    </h1>
+                                    <p className="text-xs text-slate-500 font-medium tracking-wide">INTELLIGENT INVESTING</p>
+                                </div>
                             </div>
-                        </div>
-                    </header>
+                            <button
+                                onClick={toggleNotifications}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-300 ${notificationsEnabled
+                                    ? 'bg-blue-900/30 border-blue-500/50 text-blue-400'
+                                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
+                                    }`}
+                            >
+                                <div className={`w-2 h-2 rounded-full ${notificationsEnabled ? 'bg-blue-400 animate-pulse' : 'bg-slate-600'}`}></div>
+                                <span className="text-xs font-bold hidden md:block">{notificationsEnabled ? '通知已開啟' : '通知已關閉'}</span>
+                                {notificationsEnabled ? <BellRing size={18} /> : <BellOff size={18} />}
+                            </button>
+                        </header>
 
-                    <main className="max-w-4xl mx-auto p-4 space-y-6">
-                        {/* Tab 切換 */}
-                        <div className="flex justify-center mb-6">
-                            <div className="bg-slate-900 p-1 rounded-xl border border-slate-800 flex gap-1">
-                                <button
-                                    onClick={() => setActiveTab('crypto')}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'crypto'
-                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <TrendingUp size={16} />
-                                    加密貨幣
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('stock')}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'stock'
-                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <Globe size={16} />
-                                    美股市場
-                                </button>
-                            </div>
-                        </div>
+                        {/* Navigation Tabs */}
+                        <nav className="flex p-1 bg-slate-800/50 backdrop-blur-md rounded-xl mb-6 border border-slate-700/50 sticky top-4 z-50 shadow-xl">
+                            <button
+                                onClick={() => setActiveTab('crypto')}
+                                className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'crypto'
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20 scale-[1.02]'
+                                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                                    }`}
+                            >
+                                <img src="https://assets.coingecko.com/coins/images/1/small/bitcoin.png" className="w-4 h-4 opacity-80" alt="Crypto" />
+                                加密貨幣
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('stock')}
+                                className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'stock'
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20 scale-[1.02]'
+                                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                                    }`}
+                            >
+                                <Globe size={16} />
+                                美股市場
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('taiwan')}
+                                className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'taiwan'
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20 scale-[1.02]'
+                                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                                    }`}
+                            >
+                                <Activity size={16} />
+                                臺股市場
+                            </button>
+                        </nav>
 
-                        {/* 內容顯示 */}
-                        {activeTab === 'crypto' ? (
-                            <CryptoDashboard
-                                notificationsEnabled={notificationsEnabled}
-                                toggleNotifications={toggleNotifications}
-                            />
-                        ) : (
-                            <StockDashboard
-                                notificationsEnabled={notificationsEnabled}
-                                toggleNotifications={toggleNotifications}
-                            />
-                        )}
-
-                    </main>
+                        {/* Content Area */}
+                        <main>
+                            {activeTab === 'crypto' && (
+                                <CryptoDashboard
+                                    notificationsEnabled={notificationsEnabled}
+                                    toggleNotifications={toggleNotifications}
+                                />
+                            )}
+                            {activeTab === 'stock' && (
+                                <StockDashboard
+                                    notificationsEnabled={notificationsEnabled}
+                                    toggleNotifications={toggleNotifications}
+                                />
+                            )}
+                            {activeTab === 'taiwan' && (
+                                <TaiwanDashboard />
+                            )}
+                        </main>
+                    </div>
                 </div>
             );
         };
