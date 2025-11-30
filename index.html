@@ -1120,11 +1120,7 @@
                                 const rsi = rsiData.history[idx - 14]?.rsi?.toFixed(1) || 'N/A';
                                 const actionText = rsi !== 'N/A' && rsi <= 40 ? '🔴 DCA 買入訊號' : '⚪ 觀望';
 
-                                return [
-                                    `股價: ${context.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
-                                    `模擬RSI: ${rsi}`,
-                                    actionText
-                                ];
+                                return `股價: ${context.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 2 })} (RSI (14日): ${rsi})`;
                             }
                         }
                     },
@@ -1162,7 +1158,10 @@
 
                     {/* 標題區 */}
                     <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col items-center text-center">
-                        <h2 className="text-xl font-bold text-slate-200 mb-2">臺股市場情緒RSI</h2>
+                        <h2 className="text-xl font-bold text-slate-200 mb-2">臺股情緒指標 (基於 0050 RSI)</h2>
+                        <p className="text-xs text-slate-500 mb-4 max-w-md">
+                            此指標並非恐懼貪婪指數。數值由『元大台灣50』的 14 日 RSI 強弱指標計算得出。RSI 低於 30 代表市場超賣 (恐懼)，高於 70 代表市場超買 (貪婪)。僅供參考
+                        </p>
                         <div className="w-full flex flex-col items-center">
                             {rsiData && (
                                 <FearGreedGauge
@@ -1214,7 +1213,7 @@
                     </div>
 
                     <div className="text-center text-slate-600 text-xs mt-8 pb-4">
-                        資料來源: Yahoo Finance, Google News, Smart DCA Bot (RSI 模擬)
+                        資料來源: Yahoo Finance, Google News, Smart DCA Bot (0050 歷史數據運算)
                     </div>
                 </div>
             );
