@@ -121,7 +121,7 @@ def main():
         return
 
     # Construct Message
-    message_text = "🔥 **Smart DCA 訊號觸發** 🔥\n\n"
+    message_text = "🔥 Smart DCA 訊號觸發 🔥\n\n"
     message_text += "\n".join(triggers)
     message_text += "\n\n💡 建議分批進場"
 
@@ -144,3 +144,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
