@@ -498,7 +498,7 @@
 
             const total = data.length;
             const extremeFearCount = data.filter(v => v <= 25).length;
-            const fearCount = data.filter(v => v > 25 && v <= 45).length;
+            const fearCount = data.filter(v => v > 25 && v <= 44).length;
             const otherCount = total - extremeFearCount - fearCount;
 
             const extremeFearPercent = (extremeFearCount / total) * 100;
@@ -766,16 +766,16 @@
                         borderWidth: 2,
                         pointBackgroundColor: history.map(d => {
                             if (d.y <= 25) return '#ef4444'; // Extreme Fear (Red)
-                            if (d.y <= 45) return '#f97316'; // Fear (Orange)
+                            if (d.y <= 44) return '#f97316'; // Fear (Orange)
                             return 'rgba(0,0,0,0)';
                         }),
                         pointBorderColor: history.map(d => {
                             if (d.y <= 25) return '#ef4444';
-                            if (d.y <= 45) return '#f97316';
+                            if (d.y <= 44) return '#f97316';
                             return 'rgba(0,0,0,0)';
                         }),
                         pointRadius: history.map(d => {
-                            if (d.y <= 45) return 3; // Show dots for buy zones
+                            if (d.y <= 44) return 3; // Show dots for buy zones
                             return 0;
                         }),
                         pointHoverRadius: 4,
@@ -1210,11 +1210,11 @@
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     borderWidth: 2,
-                    pointRadius: rsiData.history.map(d => d.rsi <= 40 ? 3 : 0), // 點半徑
-                    pointBackgroundColor: rsiData.history.map(d => d.rsi <= 25 ? '#ef4444' : (d.rsi <= 40 ? '#f97316' : 'rgba(0,0,0,0)')), // 點填充色
+                    pointRadius: rsiData.history.map(d => d.rsi <= 44 ? 3 : 0), // 點半徑
+                    pointBackgroundColor: rsiData.history.map(d => d.rsi <= 25 ? '#ef4444' : (d.rsi <= 44 ? '#f97316' : 'rgba(0,0,0,0)')), // 點填充色
 
                     // ✨ 核心修正：將點的邊框色設置為與填充色相同，或透明
-                    pointBorderColor: rsiData.history.map(d => d.rsi <= 25 ? '#ef4444' : (d.rsi <= 40 ? '#f97316' : 'rgba(0,0,0,0)')),
+                    pointBorderColor: rsiData.history.map(d => d.rsi <= 25 ? '#ef4444' : (d.rsi <= 44 ? '#f97316' : 'rgba(0,0,0,0)')),
 
                     pointHoverRadius: 4,
                     fill: true,
@@ -1235,7 +1235,7 @@
                             label: (context) => {
                                 const idx = context.dataIndex + (14 - 1); // 由於 RSI 從第 14 筆開始，需要調整索引
                                 const rsi = rsiData.history[idx - 14]?.rsi?.toFixed(1) || 'N/A';
-                                const actionText = rsi !== 'N/A' && rsi <= 40 ? '🔴 DCA 買入訊號' : '⚪ 觀望';
+                                const actionText = rsi !== 'N/A' && rsi <= 44 ? '🔴 DCA 買入訊號' : '⚪ 觀望';
 
                                 return `股價: ${context.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 2 })} (RSI (14日): ${rsi})`;
                             }
@@ -1555,13 +1555,13 @@
                 const labels = historicalData.map(d => d.date);
                 const prices = historicalData.map(d => d.price);
                 const pointColors = historicalData.map(d => {
-                    if (d.fng <= 20) return '#ef4444';
-                    if (d.fng <= 40) return '#f97316';
+                    if (d.fng <= 25) return '#ef4444';
+                    if (d.fng <= 44) return '#f97316';
                     return 'rgba(0,0,0,0)';
                 });
                 const pointRadiuses = historicalData.map(d => {
-                    if (d.fng <= 20) return 3;
-                    if (d.fng <= 40) return 2;
+                    if (d.fng <= 25) return 3;
+                    if (d.fng <= 44) return 2;
                     return 0;
                 });
 
