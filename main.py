@@ -6,7 +6,7 @@ from linebot.v3.messaging import (
     Configuration,
     ApiClient,
     MessagingApi,
-    BroadcastRequest,  # Changed for broadcasting
+    BroadcastRequest,
     TextMessage
 )
 
@@ -54,10 +54,12 @@ def fetch_us_stock_sentiment():
 def fetch_tw_stock_rsi(ticker="0050.TW"):
     """Calculates RSI (14) for a TW stock using yfinance"""
     try:
+        # Fetch 3 months of data to ensure enough for RSI calculation
         df = yf.download(ticker, period="3mo", interval="1d", progress=False)
         if df.empty or len(df) < 15:
             return None
         
+        # Calculate RSI
         delta = df['Close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
@@ -66,6 +68,7 @@ def fetch_tw_stock_rsi(ticker="0050.TW"):
         rsi = 100 - (100 / (1 + rs))
         
         current_rsi = rsi.iloc[-1]
+        # Handle Series if multiple columns (yfinance update)
         if isinstance(current_rsi, pd.Series):
              current_rsi = current_rsi.iloc[0]
 
@@ -76,10 +79,10 @@ def fetch_tw_stock_rsi(ticker="0050.TW"):
 
 def get_status_emoji(value):
     if value <= EXTREME_FEAR_THRESHOLD:
-        return "🔴"
+        return "🔴" # Extreme Fear
     if value <= FEAR_THRESHOLD:
-        return "🟠"
-    return "🔵"
+        return "🟠" # Fear
+    return "🔵" # Neutral/Greed
 
 def get_status_text(value, is_rsi=False):
     if value <= EXTREME_FEAR_THRESHOLD:
@@ -98,6 +101,11 @@ def main():
     us_stock_fng = fetch_us_stock_sentiment()
     tw_stock_rsi = fetch_tw_stock_rsi()
 
+    print(f"Crypto: {crypto_fng}")
+    print(f"US Stock: {us_stock_fng}")
+    print(f"TW Stock (RSI): {tw_stock_rsi}")
+
+    # Check if ANY market triggers a buy signal (<= 44)
     triggers = []
     
     if crypto_fng is not None and crypto_fng <= FEAR_THRESHOLD:
@@ -109,6 +117,7 @@ def main():
     if tw_stock_rsi is not None and tw_stock_rsi <= FEAR_THRESHOLD:
         triggers.append(f"🇹🇼 台股(0050): {tw_stock_rsi} ({get_status_text(tw_stock_rsi, is_rsi=True)} {get_status_emoji(tw_stock_rsi)})")
 
+    # If no triggers, exit
     if not triggers:
         print("No buy signals detected. Exiting.")
         return
