@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
        
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Smart DCA - 恐懼貪婪指數策略</title>
+        <title>Smart DCA Bot - 恐懼貪婪指數策略</title>
        
     <link rel="icon" type="image/png" href="./app-icon.png" />
 
@@ -198,14 +198,16 @@
         const { Bell, TrendingUp, AlertTriangle, Info, RefreshCw, Smartphone, ArrowUp, ArrowDown, Newspaper, Sparkles, ExternalLink, Bot, Globe, Activity, BellRing, BellOff } = Icons;
 
         // --- 恐懼貪婪指數儀表板元件 ---
+        console.log("SmartDCA Version: 1.1 (Debug Mode)");
+
         // API Key Placeholder for GitHub Actions Injection
         const GEMINI_API_KEY = '__GEMINI_API_KEY_PLACEHOLDER__';
 
         // --- Gemini API Helper ---
         const fetchGeminiAdvice = async (prompt) => {
             if (!GEMINI_API_KEY || GEMINI_API_KEY === '__GEMINI_API_KEY_PLACEHOLDER__') {
-                console.error("Gemini API Key is missing or empty.");
-                return "⚠️ AI 建議無法產生，請檢查 API 金鑰設定。";
+                console.error("Gemini API Key is missing or placeholder found:", GEMINI_API_KEY);
+                return `⚠️ AI 建議無法產生 (Key Status: ${GEMINI_API_KEY === '__GEMINI_API_KEY_PLACEHOLDER__' ? 'Placeholder' : 'Missing'})`;
             }
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
