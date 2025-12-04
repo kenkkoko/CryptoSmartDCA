@@ -166,13 +166,17 @@ def main():
     print(f"US Stock: {us_stock_fng}")
     print(f"TW Stock (RSI): {tw_stock_rsi}")
 
-    # Check if ANY market triggers a buy signal (<= 44)
-    triggers = []
+    # Collect status for ALL markets
+    market_status_list = []
+    has_buy_signal = False
     
-    if crypto_fng is not None and crypto_fng <= FEAR_THRESHOLD:
-        msg = f"🪙 加密貨幣: {crypto_fng} ({get_status_text(crypto_fng)} {get_status_emoji(crypto_fng)})"
+    # Crypto Logic
+    if crypto_fng is not None:
+        status_icon = get_status_emoji(crypto_fng)
+        status_text = get_status_text(crypto_fng)
+        msg = f"🪙 加密貨幣: {crypto_fng} ({status_text} {status_icon})"
         
-        # Fetch Price Stats for BTC and ETH
+        # Always fetch Price Stats for BTC and ETH (User preference)
         btc_stats = fetch_price_stats("BTC-USD")
         if btc_stats:
             msg += f"\n   - BTC: ${btc_stats['current']:,.0f} (1Y High: ${btc_stats['high']:,.0f}, Low: ${btc_stats['low']:,.0f})"
@@ -181,29 +185,47 @@ def main():
         if eth_stats:
             msg += f"\n   - ETH: ${eth_stats['current']:,.0f} (1Y High: ${eth_stats['high']:,.0f}, Low: ${eth_stats['low']:,.0f})"
             
-        triggers.append(msg)
+        market_status_list.append(msg)
+        if crypto_fng <= FEAR_THRESHOLD:
+            has_buy_signal = True
     
-    if us_stock_fng is not None and us_stock_fng <= FEAR_THRESHOLD:
-        triggers.append(f"🇺🇸 美股: {us_stock_fng} ({get_status_text(us_stock_fng)} {get_status_emoji(us_stock_fng)})")
+    # US Stock Logic
+    if us_stock_fng is not None:
+        status_icon = get_status_emoji(us_stock_fng)
+        status_text = get_status_text(us_stock_fng)
+        msg = f"🇺🇸 美股: {us_stock_fng} ({status_text} {status_icon})"
+        market_status_list.append(msg)
+        if us_stock_fng <= FEAR_THRESHOLD:
+            has_buy_signal = True
         
-    if tw_stock_rsi is not None and tw_stock_rsi <= FEAR_THRESHOLD:
-        triggers.append(f"🇹🇼 台股(0050): {tw_stock_rsi} ({get_status_text(tw_stock_rsi, is_rsi=True)} {get_status_emoji(tw_stock_rsi)})")
+    # TW Stock Logic
+    if tw_stock_rsi is not None:
+        status_icon = get_status_emoji(tw_stock_rsi)
+        status_text = get_status_text(tw_stock_rsi, is_rsi=True)
+        msg = f"🇹🇼 台股(0050): {tw_stock_rsi} ({status_text} {status_icon})"
+        market_status_list.append(msg)
+        if tw_stock_rsi <= FEAR_THRESHOLD:
+            has_buy_signal = True
 
-    # If no triggers, exit
-    if not triggers:
-        print("No buy signals detected. Exiting.")
-        return
+    # Determine Header
+    if has_buy_signal:
+        header = "🔥 Smart DCA 訊號觸發 🔥"
+    else:
+        header = "📊 每日市場觀察報告"
 
     # Construct Message
-    message_text = "🔥 Smart DCA 訊號觸發 🔥\n\n"
-    message_text += "\n".join(triggers)
+    message_text = f"{header}\n\n"
+    message_text += "\n\n".join(market_status_list)
     
-    # Generate AI Advice
+    # Generate AI Advice (Always generate)
     print("Generating AI advice...")
-    ai_advice = generate_ai_advice(triggers)
+    ai_advice = generate_ai_advice(market_status_list)
     message_text += f"\n\n🤖 AI 投資顧問建議:\n{ai_advice}"
     
-    message_text += "\n\n💡 建議分批進場"
+    if has_buy_signal:
+        message_text += "\n\n💡 建議分批進場"
+    else:
+        message_text += "\n\n💡 市場情緒穩定，請持續觀察"
 
     print("Broadcasting LINE notification...")
     try:
