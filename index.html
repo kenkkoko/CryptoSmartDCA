@@ -198,6 +198,118 @@
         const { Bell, TrendingUp, AlertTriangle, Info, RefreshCw, Smartphone, ArrowUp, ArrowDown, Newspaper, Sparkles, ExternalLink, Bot, Globe, Activity, BellRing, BellOff } = Icons;
 
         // --- 恐懼貪婪指數儀表板元件 ---
+        const GEMINI_API_KEY = 'AIzaSyD5FDLMxN_boHhp81dkfVCJla7Rp3VQhEc';
+
+        // --- Gemini API Helper ---
+        const fetchGeminiAdvice = async (prompt) => {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                return "⚠️ AI 暫時無法提供建議，請稍後再試。";
+            }
+        };
+
+        // --- AI Advice Component ---
+        const AIAdviceBlock = ({ marketData, assetName }) => {
+            const [advice, setAdvice] = useState(null);
+            const [loading, setLoading] = useState(false);
+
+            useEffect(() => {
+                if (marketData) {
+                    setLoading(true);
+                    const prompt = `
+                    你是一位專業的投資顧問。根據以下 ${assetName} 的市場數據，提供一個簡短的 DCA (平均成本法) 操作建議 (50字以內)。
+                    
+                    市場數據:
+                    ${marketData}
+                    
+                    建議風格: 理性、穩健、鼓勵分批進場。請用繁體中文回答。
+                    `;
+                    fetchGeminiAdvice(prompt).then(text => {
+                        setAdvice(text);
+                        setLoading(false);
+                    });
+                }
+            }, [marketData, assetName]);
+
+            if (loading) return (
+                <div className="mt-4 p-4 bg-slate-800/50 rounded-xl border border-slate-700 animate-pulse flex items-center gap-2 text-slate-400 text-sm">
+                    <RefreshCw className="animate-spin" size={16} />
+                    ✨ AI 投資顧問正在分析市場數據...
+                </div>
+            );
+
+            if (!advice) return null;
+
+            return (
+                <div className="mt-4 p-4 bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl border border-indigo-500/30 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                    <h4 className="text-indigo-400 font-bold text-sm mb-2 flex items-center gap-2">
+                        <span className="text-lg">🤖</span> AI 投資顧問建議
+                    </h4>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                        {advice}
+                    </p>
+                </div>
+            );
+        };
+
+        // --- AI News Analysis Component ---
+        const NewsAIAnalysis = ({ newsItems }) => {
+            const [summary, setSummary] = useState(null);
+            const [loading, setLoading] = useState(false);
+
+            useEffect(() => {
+                if (newsItems && newsItems.length > 0) {
+                    setLoading(true);
+                    const titles = newsItems.map(n => n.title).join("\n");
+                    const prompt = `
+                    請閱讀以下今日財經新聞標題，並總結成一段 50 字以內的「今日市場重點」。
+                    
+                    新聞標題:
+                    ${titles}
+                    
+                    請用繁體中文回答，語氣專業客觀。
+                    `;
+                    fetchGeminiAdvice(prompt).then(text => {
+                        setSummary(text);
+                        setLoading(false);
+                    });
+                }
+            }, [newsItems]);
+
+            if (loading) return (
+                <div className="mb-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700 animate-pulse flex items-center gap-2 text-slate-400 text-sm">
+                    <RefreshCw className="animate-spin" size={16} />
+                    ✨ AI 正在閱讀今日新聞並生成總結...
+                </div>
+            );
+
+            if (!summary) return null;
+
+            return (
+                <div className="mb-6 p-4 bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl border border-blue-500/30 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                    <h4 className="text-blue-400 font-bold text-sm mb-2 flex items-center gap-2">
+                        <span className="text-lg">📰</span> AI 今日新聞重點
+                    </h4>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                        {summary}
+                    </p>
+                </div>
+            );
+        };
+
         const FearGreedGauge = ({ fngValue, classification }) => {
             // FNG 範圍對應到 180 度的半圓
             // 0 -> 180deg (左側), 100 -> 0deg (右側)
@@ -951,6 +1063,13 @@
                                     </div>
                                 </div>
                             </div>
+                            {/* AI Advice Integration */}
+                            {fngData && (
+                                <AIAdviceBlock
+                                    assetName="美股 (S&P 500)"
+                                    marketData={`恐懼貪婪指數: ${fngData.value} (${fngData.classification})`}
+                                />
+                            )}
                         </div>
                     )}
 
@@ -978,7 +1097,10 @@
 
                         {/* 今日市場快訊 (Highlights) */}
                         {!loading && !error && stockNews.length > 0 && (
-                            <NewsSummary news={stockNews} />
+                            <>
+                                <NewsAIAnalysis newsItems={stockNews} />
+                                <NewsSummary news={stockNews} />
+                            </>
                         )}
 
                         <NewsSection news={stockNews} loading={loading} error={error} />
@@ -1318,6 +1440,13 @@
                                     </div>
                                 </div>
                             </div>
+                            {/* AI Advice Integration */}
+                            {rsiData && (
+                                <AIAdviceBlock
+                                    assetName="台股 (0050)"
+                                    marketData={`RSI(14): ${rsiData.value} (${rsiData.classification})`}
+                                />
+                            )}
                         </div>
                     )}
 
@@ -1344,7 +1473,10 @@
                         </div>
 
                         {!loading && !error && news.length > 0 && (
-                            <NewsSummary news={news} />
+                            <>
+                                <NewsAIAnalysis newsItems={news} />
+                                <NewsSummary news={news} />
+                            </>
                         )}
 
                         <NewsSection news={news} loading={loading} error={error} />
@@ -1792,6 +1924,20 @@
                                 </div>
                             </div>
 
+                            {/* AI Advice Integration */}
+                            {currentFNG && prices && (
+                                <div className="mb-6">
+                                    <AIAdviceBlock
+                                        assetName={`加密貨幣 (${selectedCoin.toUpperCase()})`}
+                                        marketData={`
+                                            資產: ${selectedCoin.toUpperCase()}
+                                            價格: $${prices[selectedCoin]?.usd || 'N/A'}
+                                            恐懼貪婪指數: ${currentFNG.value} (${currentFNG.value_classification})
+                                        `}
+                                    />
+                                </div>
+                            )}
+
                             {/* 價格走勢圖 */}
                             <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-xl">
                                 <div className="flex justify-between items-center mb-4">
@@ -1826,7 +1972,10 @@
                                 </div>
 
                                 {!newsLoading && !newsError && newsData.length > 0 && (
-                                    <NewsSummary news={newsData} />
+                                    <>
+                                        <NewsAIAnalysis newsItems={newsData} />
+                                        <NewsSummary news={newsData} />
+                                    </>
                                 )}
 
                                 <NewsSection news={newsData} loading={newsLoading} error={newsError} />
