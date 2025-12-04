@@ -129,12 +129,12 @@ def generate_ai_advice(market_status_list):
 
         請根據以下觸發的市場數據，提供一個**簡潔、明確**的操作建議 (50字以內)。
 
-        **核心任務：**
+        核心任務：
         1. 分析當前的 FNG/RSI 數值所代表的市場情緒強度。
         2. 根據情緒強度，結合資產名稱和當前價格，**相較於最近一年的價格波動**，判斷現在的價格是否具有吸引力？並分析歷史高點與當前價格相差幾%。
         3. 根據以下行動邏輯，生成一段富有洞察力和鼓勵性的建議。
 
-        **行動邏輯：**
+        行動邏輯：
         - 極度恐懼 (<= 25): 立即建議「強力分批買入」或「執行最大額度投入」。
         - 恐懼 (26 - 44): 建議「小額分批買入」，鼓勵保持紀律。
         - 中立 (45 - 55): 建議「維持觀望，不買也不賣」。
@@ -201,7 +201,7 @@ def main():
     # Generate AI Advice
     print("Generating AI advice...")
     ai_advice = generate_ai_advice(triggers)
-    message_text += f"\n\n🤖 **AI 投資顧問建議**:\n{ai_advice}"
+    message_text += f"\n\n🤖 AI 投資顧問建議:\n{ai_advice}"
     
     message_text += "\n\n💡 建議分批進場"
 
