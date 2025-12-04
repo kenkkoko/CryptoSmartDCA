@@ -205,9 +205,10 @@
 
         // --- Gemini API Helper ---
         const fetchGeminiAdvice = async (prompt) => {
-            if (!GEMINI_API_KEY || GEMINI_API_KEY === '__GEMINI_API_KEY_PLACEHOLDER__') {
-                console.error("Gemini API Key is missing or placeholder found:", GEMINI_API_KEY);
-                return `⚠️ AI 建議無法產生 (Key Status: ${GEMINI_API_KEY === '__GEMINI_API_KEY_PLACEHOLDER__' ? 'Placeholder' : 'Missing'})`;
+            // Fix: Use .includes('PLACEHOLDER') to avoid sed replacing the check string
+            if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('PLACEHOLDER')) {
+                console.error("Gemini API Key is missing or invalid.");
+                return `⚠️ AI 建議無法產生 (Key Status: ${GEMINI_API_KEY.includes('PLACEHOLDER') ? 'Placeholder' : 'Missing'})`;
             }
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
