@@ -228,7 +228,7 @@
         };
 
         // --- AI Advice Component ---
-        const AIAdviceBlock = ({ marketData, assetName }) => {
+        const AIAdviceBlock = ({ marketData, assetName, priceStats }) => {
             const [advice, setAdvice] = useState(null);
             const [loading, setLoading] = useState(false);
 
@@ -269,9 +269,27 @@
             return (
                 <div className="mt-4 p-4 bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl border border-indigo-500/30 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-                    <h4 className="text-indigo-400 font-bold text-sm mb-2 flex items-center gap-2">
+                    <h4 className="text-indigo-400 font-bold text-sm mb-3 flex items-center gap-2">
                         <span className="text-lg">🤖</span> AI 投資顧問建議
                     </h4>
+
+                    {priceStats && (
+                        <div className="grid grid-cols-3 gap-2 mb-3 pb-3 border-b border-slate-700/50">
+                            <div className="text-center">
+                                <div className="text-xs text-slate-500 mb-1">當前價格</div>
+                                <div className="text-sm font-bold text-slate-200">${priceStats.current?.toLocaleString()}</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-xs text-slate-500 mb-1">近一年最高</div>
+                                <div className="text-sm font-bold text-slate-200">${priceStats.high?.toLocaleString()}</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-xs text-slate-500 mb-1">近一年最低</div>
+                                <div className="text-sm font-bold text-slate-200">${priceStats.low?.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    )}
+
                     <p className="text-slate-300 text-sm leading-relaxed">
                         {advice}
                     </p>
@@ -1944,6 +1962,11 @@
                                 <div className="mb-6">
                                     <AIAdviceBlock
                                         assetName={`加密貨幣 (${selectedCoin.toUpperCase()})`}
+                                        priceStats={{
+                                            current: prices[selectedCoin]?.usd,
+                                            high: Math.max(...historicalData.map(d => d.price)),
+                                            low: Math.min(...historicalData.map(d => d.price))
+                                        }}
                                         marketData={`
                                             資產: ${selectedCoin.toUpperCase()}
                                             價格: $${prices[selectedCoin]?.usd || 'N/A'}
