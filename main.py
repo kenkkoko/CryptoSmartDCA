@@ -14,7 +14,8 @@ import google.generativeai as genai
 # --- Configuration ---
 # ⚠️ Critical: Read tokens from environment variables for security
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+# Use Backend-specific key if available, otherwise fallback to generic key
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY_BACKEND') or os.environ.get('GEMINI_API_KEY')
 # LINE_USER_ID is no longer needed for broadcast, but keeping it in env is fine
 
 # Thresholds
