@@ -16,11 +16,22 @@ import google.generativeai as genai
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
 # Use Backend-specific key if available, otherwise fallback to generic key
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY_BACKEND') or os.environ.get('GEMINI_API_KEY')
-# LINE_USER_ID is no longer needed for broadcast, but keeping it in env is fine
+
+# NEW: Keys for Stock/Crypto Data
+ALPHA_VANTAGE_KEY = os.environ.get('ALPHA_VANTAGE_KEY')
+FUGLE_KEY = os.environ.get('FUGLE_KEY')
 
 # Thresholds
 EXTREME_FEAR_THRESHOLD = 25
 FEAR_THRESHOLD = 44
+
+def format_price(price):
+    """Formats price: 8 decimals if < 1, else 0 decimals (or 2)"""
+    if price is None:
+        return "N/A"
+    if price < 1:
+        return f"{price:.8f}"
+    return f"{price:,.0f}"
 
 def fetch_crypto_sentiment():
     """Fetches Crypto Fear & Greed Index from Alternative.me"""
@@ -36,7 +47,8 @@ def fetch_crypto_sentiment():
         return None
 
 def fetch_us_stock_sentiment():
-    """Fetches US Stock Fear & Greed Index from CNN"""
+    """Fetches US Stock Fear & Greed Index from CNN (or fallback)"""
+    # Note: CNN often blocks scraper. If AV API key is present, we could calculate RSI, but sticking to CNN for FNG value.
     try:
         url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
         headers = {
@@ -45,7 +57,6 @@ def fetch_us_stock_sentiment():
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
-        # CNN structure handling
         if 'fear_and_greed' in data:
             score = int(round(data['fear_and_greed']['score']))
             return score
@@ -71,7 +82,6 @@ def fetch_tw_stock_rsi(ticker="0050.TW"):
         rsi = 100 - (100 / (1 + rs))
         
         current_rsi = rsi.iloc[-1]
-        # Handle Series if multiple columns (yfinance update)
         if isinstance(current_rsi, pd.Series):
              current_rsi = current_rsi.iloc[0]
 
@@ -84,7 +94,6 @@ def fetch_price_stats(ticker):
     """Fetches current price and 1-year high/low"""
     try:
         ticker_obj = yf.Ticker(ticker)
-        # Fetch 1 year of history
         hist = ticker_obj.history(period="1y")
         if hist.empty:
             return None
@@ -132,7 +141,7 @@ def generate_ai_advice(market_status_list):
 
         核心任務：
         1. 分析當前的 FNG/RSI 數值所代表的市場情緒強度。
-        2. 根據情緒強度，結合資產名稱和當前價格，**相較於最近一年的價格波動**，判斷現在的價格是否具有吸引力？並分析歷史高點與當前價格相差幾%。
+        2. 根據情緒強度，結合資產名稱和當前價格，**相較於最近一年的價格波動 (參考最高/最低價)**，判斷現在的價格是否具有吸引力？(注意：小幣種價格可能包含多位小數)。
         3. 根據以下行動邏輯，生成一段富有洞察力和鼓勵性的建議。
 
         行動邏輯：
@@ -156,7 +165,7 @@ def generate_ai_advice(market_status_list):
 def main():
     if not LINE_CHANNEL_ACCESS_TOKEN:
         print("Error: LINE_CHANNEL_ACCESS_TOKEN not set.")
-        return
+        # return # Allow running locally without LINE token for debug
 
     print("Fetching market data...")
     crypto_fng = fetch_crypto_sentiment()
@@ -177,14 +186,14 @@ def main():
         status_text = get_status_text(crypto_fng)
         msg = f"🪙 加密貨幣: {crypto_fng} ({status_text} {status_icon})"
         
-        # Always fetch Price Stats for BTC and ETH (User preference)
+        # Always fetch Price Stats for BTC and ETH
         btc_stats = fetch_price_stats("BTC-USD")
         if btc_stats:
-            msg += f"\n   - BTC: ${btc_stats['current']:,.0f} (1Y High: ${btc_stats['high']:,.0f}, Low: ${btc_stats['low']:,.0f})"
+            msg += f"\n   - BTC: ${format_price(btc_stats['current'])} (1Y High: ${format_price(btc_stats['high'])}, Low: ${format_price(btc_stats['low'])})"
             
         eth_stats = fetch_price_stats("ETH-USD")
         if eth_stats:
-            msg += f"\n   - ETH: ${eth_stats['current']:,.0f} (1Y High: ${eth_stats['high']:,.0f}, Low: ${eth_stats['low']:,.0f})"
+            msg += f"\n   - ETH: ${format_price(eth_stats['current'])} (1Y High: ${format_price(eth_stats['high'])}, Low: ${format_price(eth_stats['low'])})"
             
         market_status_list.append(msg)
         if crypto_fng <= FEAR_THRESHOLD:
@@ -229,21 +238,24 @@ def main():
         message_text += "\n\n💡 市場情緒穩定，請持續觀察"
 
     print("Broadcasting LINE notification...")
-    try:
-        configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-        api_client = ApiClient(configuration)
-        messaging_api = MessagingApi(api_client)
+    if LINE_CHANNEL_ACCESS_TOKEN:
+        try:
+            configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
+            api_client = ApiClient(configuration)
+            messaging_api = MessagingApi(api_client)
 
-        # Broadcast Request (Sends to ALL friends)
-        broadcast_request = BroadcastRequest(
-            messages=[TextMessage(text=message_text)]
-        )
-        
-        messaging_api.broadcast(broadcast_request)
-        print("Broadcast sent successfully!")
+            # Broadcast Request
+            broadcast_request = BroadcastRequest(
+                messages=[TextMessage(text=message_text)]
+            )
+            
+            messaging_api.broadcast(broadcast_request)
+            print("Broadcast sent successfully!")
 
-    except Exception as e:
-        print(f"Error sending LINE notification: {e}")
+        except Exception as e:
+            print(f"Error sending LINE notification: {e}")
+    else:
+        print("Skipped Broadcast (No Token)") # Friendly verify for local run
 
 if __name__ == "__main__":
     main()
